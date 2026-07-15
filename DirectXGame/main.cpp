@@ -5,6 +5,7 @@
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 using namespace KamataEngine;
 
@@ -99,41 +100,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	PipelineState pipelineState;
 	SetupPipelineState(pipelineState, rs, vs, ps);
 
+	// リソースの確保含め、頂点情報を柔軟に対応できるように構造体を作成する
+	struct VertexData {
+		Vector4 position;
+	};
 
-	// VertexResourceの生成 ---------
-	//// 頂点リソース用のヒープの設定
-	//D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	//uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // CPUから書き込むヒープ
+	// 頂点データの準備
+	VertexData vertices[] = {
+	    {0.0f,  0.5f,  0.0f, 1.0f},
+	    {0.5f,  -0.5f, 0.0f, 1.0f},
+	    {-0.5f, -0.5f, 0.0f, 1.0f},
+	};
 
-	//// 頂点リソースの設定
-	//D3D12_RESOURCE_DESC vertexResourceDesc{};
-	//vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // バッファ
-	//vertexResourceDesc.Width = sizeof(Vector4) * 3;                 // リソースのサイズ。今回は Vector4を3頂点分
-	//// バッファの場合はこれらは1にする決まり
-	//vertexResourceDesc.Height = 1;
-	//vertexResourceDesc.DepthOrArraySize = 1;
-	//vertexResourceDesc.MipLevels = 1;
-	//vertexResourceDesc.SampleDesc.Count = 1;
-	//// バッファの場合はこれにする決まり
-	//vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	//// 実際に頂点リソースを生成する
-	//ID3D12Resource* vertexResource = nullptr;
-	//HRESULT hr = dxCommon->GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
-	//assert(SUCCEEDED(hr)); // うまくいかなかったときは起動できない
-
-	//// VertexBufferViewを作成する ---------
-	//D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	//// リソースの先頭アドレスから使う
-	//vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	//// 使用するリソースのサイズは頂点3つ分のサイズ
-	//vertexBufferView.SizeInBytes = sizeof(Vector4) * 3;
-	//// 1つの頂点のサイズ
-	//vertexBufferView.StrideInBytes = sizeof(Vector4);
 
 	// VertexBuffer(VertexResource, VertexResourceView)の生成
 	VertexBuffer vb;
-	vb.Create(sizeof(Vector4) * 3, sizeof(Vector4));
+	//vb.Create(sizeof(Vector4) * 3, sizeof(Vector4));
+	vb.Create(sizeof(vertices), sizeof(vertices[0]));
 
 	// 頂点リソースにデータを書き込む ---------
 	Vector4* vertexData = nullptr;
@@ -143,6 +126,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f};  // 右下
 	// 頂点リソースのマップを解除する
 	//vb.Get()->Unmap(0, nullptr);
+
+	// 頂点インデックスデータの準備
+	uint16_t indices[] = {0, 1, 2};
+
+	// IndexBuffer(IndexResource, IndexResourceView)の生成
+	IndexBuffer ib;
+	ib.Create(sizeof(indices), sizeof(indices[0]));
+
+	// 頂点インデックスリソースにデータを書き込む
+	uint16_t* pGpuIndices = nullptr;
+	ib.Get()->Map(0, nullptr, reinterpret_cast<void**>(&pGpuIndices));
+
+	for (int i = 0; i < _countof(indices); ++i) {
+		pGpuIndices[i] = indices[i];
+	}
 
 	// メインループ
 	while (true) {
@@ -160,10 +158,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		commandList->SetGraphicsRootSignature(rs.Get());     // RootSignatureの設定
 		commandList->SetPipelineState(pipelineState.Get());     // PSOの設定する
 		commandList->IASetVertexBuffers(0, 1, vb.GetView()); // VBVの設定する
+		commandList->IASetIndexBuffer(ib.GetView()); // IBVの設定する
 		// トポロジの設定
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		// 頂点数、インスタンス数、インデックスの開始位置、インデックスのオフセット
-		commandList->DrawInstanced(3, 1, 0, 0);
+		//commandList->DrawInstanced(3, 1, 0, 0);
+		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
 
 
 		// 描画終了
