@@ -1,5 +1,7 @@
 #include "WorldTransformEx.h"
 
+
+
 using namespace KamataEngine;
 using namespace KamataEngine::MathUtility; // Make~Matrix Matrix4x4同士の積(*)の利用
 

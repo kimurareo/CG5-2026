@@ -3,6 +3,9 @@
 #include <cassert> // assert
 #include <d3d12.h> // ID3D~, D3D~
 
+#include <cassert>
+
+
 using namespace KamataEngine;
 
 // 生成
@@ -29,6 +32,8 @@ void VertexBuffer::Create(const UINT size, const UINT stride) {
 
 	// 実際に頂点リソースを作る
 	ID3D12Resource* vertexBuffer = nullptr;
+
+	[[maybe_unused]]
 	HRESULT hr =
 	    dxCommon->GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexBuffer));
 	assert(SUCCEEDED(hr));

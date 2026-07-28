@@ -2,6 +2,9 @@
 #include <string>    // string wstring
 #include <windows.h> // MultiByteToWideChar WideCharToMultiByte CP_UTF8
 
+#include <cassert>
+
+
 // string -> wstring 文字列変換
 std::wstring ConvertString(const std::string& str) {
 	if (str.empty()) {

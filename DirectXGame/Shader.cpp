@@ -7,6 +7,9 @@
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib") // DXCCompilerのリンク設定
 
+#include <cassert>
+
+
 // シェーダーファイルを読み込み、コンパイルする
 void Shader::Load(const std::wstring& filePath, const std::wstring& shaderModel) {
 
